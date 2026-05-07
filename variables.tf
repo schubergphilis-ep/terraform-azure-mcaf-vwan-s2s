@@ -97,6 +97,34 @@ variable "vpn_site_connections" {
         ip_address          = string
         ip_configuration_id = string
       })))
+
+      ingress_nat_rule_names = optional(list(string), [])
+      egress_nat_rule_names  = optional(list(string), [])
     }))
   }))
+}
+
+variable "vpn_gateway_nat_rules" {
+  type = map(object({
+    name                   = string
+    vpn_gateway_name       = string
+    mode                   = string
+    type                   = optional(string, "Static")
+    internal_address_space = string
+    external_address_space = string
+    internal_port_range    = optional(string)
+    external_port_range    = optional(string)
+  }))
+  default     = {}
+  description = "VPN Gateway NAT rules for IP translation over S2S VPN connections. vpn_gateway_name is the map key in var.vpn_gateways."
+
+  validation {
+    condition     = alltrue([for k, v in var.vpn_gateway_nat_rules : contains(["IngressSnat", "EgressSnat"], v.mode)])
+    error_message = "mode must be 'IngressSnat' or 'EgressSnat'."
+  }
+
+  validation {
+    condition     = alltrue([for k, v in var.vpn_gateway_nat_rules : contains(["Static", "Dynamic"], v.type)])
+    error_message = "type must be 'Static' or 'Dynamic'."
+  }
 }

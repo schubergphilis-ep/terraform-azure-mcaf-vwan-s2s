@@ -8,6 +8,22 @@ VPN connection throughput can be limited by setting 'ratelimit_enabled' to true.
     bandwidth_mbps    = 20
     ratelimit_enabled = true
 ```
+## VPN Gateway NAT Rules
+
+NAT rules can be defined using the `vpn_gateway_nat_rules` variable and attached to VPN links by referencing their map keys in `ingress_nat_rule_names` and `egress_nat_rule_names`. See [`examples/nat-rules`](examples/nat-rules) for a complete example.
+
+```hcl
+vpn_gateway_nat_rules = {
+  siteb-nginx = {
+    name                   = "nat-rule-siteb-nginx"
+    vpn_gateway_name       = "hub"
+    mode                   = "IngressSnat"
+    internal_address_space = "192.168.1.4/32"
+    external_address_space = "172.16.111.4/32"
+  }
+}
+```
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -33,6 +49,7 @@ No modules.
 | [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) | resource |
 | [azurerm_vpn_gateway.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/vpn_gateway) | resource |
 | [azurerm_vpn_gateway_connection.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/vpn_gateway_connection) | resource |
+| [azurerm_vpn_gateway_nat_rule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/vpn_gateway_nat_rule) | resource |
 | [azurerm_vpn_site.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/vpn_site) | resource |
 
 ## Inputs
@@ -42,12 +59,19 @@ No modules.
 | <a name="input_resource_group"></a> [resource\_group](#input\_resource\_group) | The Resource Group to add the IP Groups to or create if create\_ipg\_resource\_group is true | <pre>object({<br>    name     = string<br>    location = string<br>  })</pre> | n/a | yes |
 | <a name="input_virtual_wan_properties"></a> [virtual\_wan\_properties](#input\_virtual\_wan\_properties) | The Virtual WAN properties | <pre>object({<br>    virtual_wan_id = string<br>  })</pre> | n/a | yes |
 | <a name="input_vpn_gateways"></a> [vpn\_gateways](#input\_vpn\_gateways) | The VPN Gateway to create | <pre>map(object({<br>    name               = string<br>    routing_preference = string<br>    scale_unit         = number<br>    virtual_hub_id     = string<br>    bgp_settings = optional(object({<br>      asn                            = number<br>      instance_0_bgp_peering_address = optional(string)<br>      instance_1_bgp_peering_address = optional(string)<br>      peer_weight                    = number<br>    }))<br>  }))</pre> | n/a | yes |
-| <a name="input_vpn_site_connections"></a> [vpn\_site\_connections](#input\_vpn\_site\_connections) | n/a | <pre>map(object({<br>    name                      = string<br>    vpn_gateway_name          = string<br>    remote_vpn_site_name      = string<br>    internet_security_enabled = optional(bool)<br><br>    vpn_links = list(object({<br>      name = string<br>      # Index of the link on the vpn gateway<br>      vpn_site_link_number                  = number<br>      bandwidth_mbps                        = optional(number)<br>      bgp_enabled                           = optional(bool)<br>      route_weight                          = optional(number)<br>      ratelimit_enabled                     = optional(bool)<br>      protocol                              = optional(string)<br>      shared_key                            = optional(string)<br>      connection_mode                       = optional(string)<br>      local_azure_ip_address_enabled        = optional(bool)<br>      policy_based_traffic_selector_enabled = optional(bool)<br><br>      ipsec_policy = optional(object({<br>        dh_group                 = string<br>        ike_encryption_algorithm = string<br>        ike_integrity_algorithm  = string<br>        encryption_algorithm     = string<br>        integrity_algorithm      = string<br>        pfs_group                = string<br>        sa_data_size_kb          = string<br>        sa_lifetime_sec          = string<br>      }))<br><br>      custom_bgp_address = optional(list(object({<br>        ip_address          = string<br>        ip_configuration_id = string<br>      })))<br>    }))<br>  }))</pre> | n/a | yes |
+| <a name="input_vpn_site_connections"></a> [vpn\_site\_connections](#input\_vpn\_site\_connections) | n/a | <pre>map(object({<br>    name                      = string<br>    vpn_gateway_name          = string<br>    remote_vpn_site_name      = string<br>    internet_security_enabled = optional(bool)<br><br>    vpn_links = list(object({<br>      name = string<br>      # Index of the link on the vpn gateway<br>      vpn_site_link_number                  = number<br>      bandwidth_mbps                        = optional(number)<br>      bgp_enabled                           = optional(bool)<br>      route_weight                          = optional(number)<br>      ratelimit_enabled                     = optional(bool)<br>      protocol                              = optional(string)<br>      shared_key                            = optional(string)<br>      connection_mode                       = optional(string)<br>      local_azure_ip_address_enabled        = optional(bool)<br>      policy_based_traffic_selector_enabled = optional(bool)<br><br>      ipsec_policy = optional(object({<br>        dh_group                 = string<br>        ike_encryption_algorithm = string<br>        ike_integrity_algorithm  = string<br>        encryption_algorithm     = string<br>        integrity_algorithm      = string<br>        pfs_group                = string<br>        sa_data_size_kb          = string<br>        sa_lifetime_sec          = string<br>      }))<br><br>      custom_bgp_address = optional(list(object({<br>        ip_address          = string<br>        ip_configuration_id = string<br>      })))<br><br>      ingress_nat_rule_names = optional(list(string), [])<br>      egress_nat_rule_names  = optional(list(string), [])<br>    }))<br>  }))</pre> | n/a | yes |
 | <a name="input_vpn_sites"></a> [vpn\_sites](#input\_vpn\_sites) | The VPN Site to create | <pre>map(object({<br>    name          = string<br>    address_cidrs = optional(list(string))<br>    device_model  = optional(string, null)<br>    device_vendor = optional(string, null)<br>    links = list(object({<br>      name          = string<br>      ip_address    = optional(string)<br>      provider_name = optional(string)<br>      speed_in_mbps = optional(number)<br>      bgp_settings = optional(object({<br>        asn                 = number<br>        bgp_peering_address = string<br>      }))<br>    }))<br>  }))</pre> | n/a | yes |
 | <a name="input_create_new_resource_group"></a> [create\_new\_resource\_group](#input\_create\_new\_resource\_group) | A flag to create a Resource Group for the IP Groups | `bool` | `true` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | A map of tags to assign to the resource. | `map(string)` | `{}` | no |
+| <a name="input_vpn_gateway_nat_rules"></a> [vpn\_gateway\_nat\_rules](#input\_vpn\_gateway\_nat\_rules) | VPN Gateway NAT rules for IP translation over S2S VPN connections. vpn\_gateway\_name is the map key in var.vpn\_gateways. | <pre>map(object({<br>    name                   = string<br>    vpn_gateway_name       = string<br>    mode                   = string<br>    type                   = optional(string, "Static")<br>    internal_address_space = string<br>    external_address_space = string<br>    internal_port_range    = optional(string)<br>    external_port_range    = optional(string)<br>  }))</pre> | `{}` | no |
 
 ## Outputs
 
-No outputs.
+| Name | Description |
+|------|-------------|
+| <a name="output_vpn_gateway_bgp_settings"></a> [vpn\_gateway\_bgp\_settings](#output\_vpn\_gateway\_bgp\_settings) | Map of VPN Gateway BGP settings |
+| <a name="output_vpn_gateway_connection_ids"></a> [vpn\_gateway\_connection\_ids](#output\_vpn\_gateway\_connection\_ids) | Map of VPN Gateway Connection IDs |
+| <a name="output_vpn_gateway_ids"></a> [vpn\_gateway\_ids](#output\_vpn\_gateway\_ids) | Map of VPN Gateway IDs |
+| <a name="output_vpn_gateway_nat_rule_ids"></a> [vpn\_gateway\_nat\_rule\_ids](#output\_vpn\_gateway\_nat\_rule\_ids) | Map of VPN Gateway NAT rule IDs |
+| <a name="output_vpn_site_ids"></a> [vpn\_site\_ids](#output\_vpn\_site\_ids) | Map of VPN Site IDs |
 <!-- END_TF_DOCS -->

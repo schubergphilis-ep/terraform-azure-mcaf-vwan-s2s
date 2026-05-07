@@ -4,6 +4,16 @@ All notable changes to this project will automatically be documented in this fil
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.3.0 - 2026-05-07
+
+### What's Changed
+
+#### Features
+
+* feat: Add VPN Gateway NAT rule support (IngressSnat/EgressSnat) with name-based cross-references from vpn_links
+* feat: Add outputs for gateway IDs, BGP settings, NAT rule IDs, site IDs, and connection IDs
+* feat: Add NAT rules example deployment
+
 ## v0.2.2 - 2025-10-17
 
 ### What's Changed
