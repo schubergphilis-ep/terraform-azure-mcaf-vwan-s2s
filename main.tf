@@ -50,6 +50,24 @@ resource "azurerm_vpn_gateway" "this" {
   )
 }
 
+resource "azurerm_vpn_gateway_nat_rule" "this" {
+  for_each       = var.vpn_gateway_nat_rules
+  name           = each.value.name
+  vpn_gateway_id = azurerm_vpn_gateway.this[each.value.vpn_gateway_name].id
+  mode           = each.value.mode
+  type           = each.value.type
+
+  internal_mapping {
+    address_space = each.value.internal_address_space
+    port_range    = each.value.internal_port_range
+  }
+
+  external_mapping {
+    address_space = each.value.external_address_space
+    port_range    = each.value.external_port_range
+  }
+}
+
 resource "azurerm_vpn_site" "this" {
   for_each            = var.vpn_sites != null ? var.vpn_sites : {}
   name                = each.value.name
@@ -87,8 +105,12 @@ resource "azurerm_vpn_site" "this" {
   )
 }
 
+locals {
+  vpn_site_connections = nonsensitive(var.vpn_site_connections != null ? var.vpn_site_connections : {})
+}
+
 resource "azurerm_vpn_gateway_connection" "this" {
-  for_each = var.vpn_site_connections != null && length(var.vpn_site_connections) > 0 ? var.vpn_site_connections : {}
+  for_each = local.vpn_site_connections
 
   name                      = each.value.name
   vpn_gateway_id            = azurerm_vpn_gateway.this[each.value.vpn_gateway_name].id
@@ -110,6 +132,8 @@ resource "azurerm_vpn_gateway_connection" "this" {
       shared_key                            = try(vpn_link.value.shared_key, null)
       local_azure_ip_address_enabled        = try(vpn_link.value.local_azure_ip_address_enabled, null)
       policy_based_traffic_selector_enabled = try(vpn_link.value.policy_based_traffic_selector_enabled, null)
+      ingress_nat_rule_ids                  = [for n in vpn_link.value.ingress_nat_rule_names : azurerm_vpn_gateway_nat_rule.this[n].id]
+      egress_nat_rule_ids                   = [for n in vpn_link.value.egress_nat_rule_names : azurerm_vpn_gateway_nat_rule.this[n].id]
 
       dynamic "ipsec_policy" {
         for_each = vpn_link.value.ipsec_policy != null ? [vpn_link.value.ipsec_policy] : []
