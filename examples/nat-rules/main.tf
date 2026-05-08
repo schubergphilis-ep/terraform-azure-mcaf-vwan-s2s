@@ -40,7 +40,7 @@ module "s2svpn" {
   # IngressSnat: translates the SOURCE of incoming packets (from remote site).
   # EgressSnat: translates the SOURCE of outgoing packets (toward remote site).
   vpn_gateway_nat_rules = {
-    # Translate remote site IP 192.168.1.4 to 10.96.111.4 when entering the hub
+    # Translate remote site IP 192.168.1.4 to 172.16.111.4 when entering the hub
     siteb-nginx = {
       name              = "nat-rule-siteb-nginx"
       vpn_gateway_name  = "hub"
@@ -49,7 +49,7 @@ module "s2svpn" {
       external_mappings = [{ address_space = "172.16.111.4/32" }]
     }
 
-    # Translate Azure spoke IP 10.96.2.4 to 10.96.222.4 when leaving the hub
+    # Translate Azure spoke IP 172.16.2.4 to 172.16.222.4 when leaving the hub
     sitea-test = {
       name              = "nat-rule-sitea-test"
       vpn_gateway_name  = "hub"
